@@ -39,6 +39,7 @@ class AuthController extends Controller
 
         //Upload user image (thumbnail)
         $imagepath = null;
+        
         if($request->hasFile('profile_picture') && $request->file('profile_picture')-> isValid()){
 
          $file = $request->file('profile_picture');
