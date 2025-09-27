@@ -15,14 +15,10 @@ Route::post('/register', [AuthController::class, 'register'])->name('register');
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
-Route::group(['middleware' => 'auth:sanctum'], function () {
+Route::group(['middleware' => 'auth:sanctum', 'throttle:api'], function () {
     Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
-
-    //Blog Category Route
     Route::apiResource('categories', BlogCategoryController::class);
-
-    //Blog Posts Routes
     Route::apiResource('posts', BlogPostController::class);
 });
 

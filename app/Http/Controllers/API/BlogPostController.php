@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth; // ok to keep, but we won’t use it here
+use Illuminate\Support\Facades\RateLimiter;
 
 
 class BlogPostController extends Controller
@@ -28,14 +29,34 @@ public function index()
 
 public function store(Request $request)
 {
-    // Must be authenticated via auth:sanctum middleware
+        // Must be authenticated via auth:sanctum middleware
     $user = $request->user();
     if (!$user) {
         return response()->json([
-        'status' => 'fail', 
-        'message' => 'Unauthenticated'
+            'status'  => 'fail',
+            'message' => 'Unauthenticated'
         ], 401);
     }
+
+    //Rate limit: 10 requests per minute per user
+    $key = 'posts-store:' . ($user->id ?? $request->ip());
+    if (RateLimiter::tooManyAttempts($key, 3)) {
+        $seconds = RateLimiter::availableIn($key);
+        return response()->json([
+            'status'  => 'fail',
+            'message' => 'Too many requests. Try again in ' . $seconds . ' seconds.'
+        ], 429);
+    }
+    RateLimiter::hit($key, 60); // decay in 60 seconds
+
+    // // Must be authenticated via auth:sanctum middleware
+    // $user = $request->user();
+    // if (!$user) {
+    //     return response()->json([
+    //     'status' => 'fail', 
+    //     'message' => 'Unauthenticated'
+    //     ], 401);
+    // }
 
     // Only allow admins
     if ($user->role !== 'admin') {
