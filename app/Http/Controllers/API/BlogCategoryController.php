@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\BlogCategory;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\RateLimiter;
 
 class BlogCategoryController extends Controller
 {
@@ -42,9 +43,36 @@ class BlogCategoryController extends Controller
             "status"    => "fail",
             "message"   => $validator-> errors()
         ], 400);
-
         }
+        
+        $user = $request->user();
+    if (! $user) 
+    {
+        return response()->json(
+    [
+        'status' => 'fail', 
+        'message' => 'You are not Unauthenticated'
+    ], 401);
+    }
 
+        $key = 'posts-store:' . ($user->id ?? $request->ip());
+    if (RateLimiter::tooManyAttempts($key, 3)) {
+        $seconds = RateLimiter::availableIn($key);
+        return response()->json([
+            'status'  => 'fail',
+            'message' => 'Too many requests. Try again in ' . $seconds . ' seconds.'
+        ], 429);
+    }
+    RateLimiter::hit($key, 60); // decay in 60 seconds
+    // Only admins and authors may edit images
+    if ($user->role == 'reader') 
+    {
+        return response()->json(
+    [
+        'status' => 'fail', 
+        'message' => 'You do not have admin access edit this '
+    ], 400);
+    }
         $data['name'] = $request->name;
         $data['slug'] = Str::slug($request->name);
 

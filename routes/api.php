@@ -3,6 +3,8 @@
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BlogCategoryController;
 use App\Http\Controllers\API\BlogPostController;
+use App\Http\Controllers\API\CommentController;
+use App\Http\Controllers\API\LikeController;
 use App\Http\Controllers\API\TestApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -20,10 +22,22 @@ Route::group(['middleware' => 'auth:sanctum', 'throttle:api'], function () {
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::apiResource('categories', BlogCategoryController::class);
     Route::apiResource('posts', BlogPostController::class);
+
+        //edit blog post image
+    Route::post('/blog-post-image/{post}', [BlogPostController::class,'blogPostImage'])->name('blog-post-image');
+    Route::apiResource('posts', BlogPostController::class);
+    Route::get('/post/react', [LikeController::class, 'react'])->name('react');
+    Route::apiResource('comments', CommentController::class);
+    Route::get('comments', [CommentController::class, 'index'])->name('index');
+
+    Route::post('/comments/change-status/', [CommentController::class,'changestatus'])->name('changestatus');
+
 });
 
 Route::get('categories',[BlogCategoryController::class, 'index']);
 Route::get('posts',[BlogPostController::class, 'index']);
+Route::get('/post/reactions/{post}',[LikeController::class, 'reactions'])->name('reactions');
+
 
 
 
