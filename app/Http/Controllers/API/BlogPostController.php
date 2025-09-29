@@ -56,14 +56,6 @@ public function store(Request $request)
     }
     RateLimiter::hit($key, 60); // decay in 60 seconds
 
-    // // Must be authenticated via auth:sanctum middleware
-    // $user = $request->user();
-    // if (!$user) {
-    //     return response()->json([
-    //     'status' => 'fail', 
-    //     'message' => 'Unauthenticated'
-    //     ], 401);
-    // }
 
     // Only allow admins
     if ($user->role == 'reader') {
@@ -220,6 +212,12 @@ public function update(Request $request, $id)
         ], 400);
 
     }
+
+    $blogPost->seo()->updateOrCreate([], [
+    'meta_title'       => $request->meta_title,
+    'meta_description' => $request->meta_description,
+    'meta_keywords'    => $request->meta_keywords,
+]);
         $blogPost->category_id  = $request->category_id;
         $blogPost->user_id      = $request->user_id;
         $blogPost->title        = $request->title;
@@ -232,16 +230,8 @@ public function update(Request $request, $id)
         
         $seoData = Seo::where('post_id',$blogPost->id)->first();
 
-    //     Seo::updateOrCreate(
-    //     ['post_id' => $blogPost->id],     
-    //     [
-    //     'meta_title'       => $request->meta_title,
-    //     'meta_description' => $request->meta_description,
-    //     'meta_keywords'    => $request->meta_keywords,
-    // ]
-// );
 
-        $seoData = Seo::where('post_id',$blogPost->id)->first();
+       
 
         $seoData-> meta_title       = $request->meta_title;
         $seoData-> meta_description = $request->meta_description;

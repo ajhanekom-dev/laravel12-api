@@ -26,7 +26,7 @@ Route::group(['middleware' => 'auth:sanctum', 'throttle:api'], function () {
         //edit blog post image
     Route::post('/blog-post-image/{post}', [BlogPostController::class,'blogPostImage'])->name('blog-post-image');
     Route::apiResource('posts', BlogPostController::class);
-    Route::get('/post/react', [LikeController::class, 'react'])->name('react');
+    Route::post('/post/react', [LikeController::class, 'react'])->name('react');
     Route::apiResource('comments', CommentController::class);
     Route::get('comments', [CommentController::class, 'index'])->name('index');
 

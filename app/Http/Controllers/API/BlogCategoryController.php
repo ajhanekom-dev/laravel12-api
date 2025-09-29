@@ -30,6 +30,7 @@ class BlogCategoryController extends Controller
      */
     public function store(Request $request)
     {
+    
             //Validate
         $validator = Validator::make($request->all(), 
         [

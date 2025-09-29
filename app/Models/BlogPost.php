@@ -22,4 +22,5 @@ class BlogPost extends Model
     public function seo_data() : HasOne {
         return $this->hasOne(Seo::class, 'post_id', 'id');
     }
+    public function seo() { return $this->hasOne(\App\Models\Seo::class, 'post_id'); }
 }
