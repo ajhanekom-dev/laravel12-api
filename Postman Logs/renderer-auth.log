@@ -1,0 +1,5 @@
+[15236][1758888970549][auth][info]["EventBus~initialize - Success"]
+[15236][1758888970932][auth][info]["Authentication~did-navigate:","https://identity.getpostman.com"]
+[15236][1758888985921][auth][info]["Authentication~handleAuthorizationResponse: Started handling authorization response.",{"code":"f1fc5acb2dd9fe622d03a864f8b471d59a7ba3a36509820529900eaea10235da"}]
+[15236][1758888985924][auth][info]["Authentication~handleAuthorizationResponse: Successfully executed function to handle authorization response."]
+[15236][1758888986423][auth][info]["Authentication~will-navigate:","https://erisedstraehruoytubecafruoytonwohsi.chromiumapp.org"]
