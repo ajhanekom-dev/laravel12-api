@@ -99,6 +99,32 @@ class BlogCategoryController extends Controller
      */
     public function update(Request $request, string $id)
     {
+            $user = $request->user();
+    if (!$user) {
+        return response()->json([
+        'status' => 'fail', 
+        'message' => 'Unauthenticated'
+        ], 401);
+    }
+
+        $key = 'posts-store:' . ($user->id ?? $request->ip());
+    if (RateLimiter::tooManyAttempts($key, 3)) {
+        $seconds = RateLimiter::availableIn($key);
+        return response()->json([
+            'status'  => 'fail',
+            'message' => 'Too many requests. Try again in ' . $seconds . ' seconds.'
+        ], 429);
+    }
+    RateLimiter::hit($key, 60); // decay in 60 seconds
+
+    
+    // Only allow admins
+    if ($user->role !== 'admin') {
+        return response()->json(
+        ['status' => 'fail', 
+        'message' => 'Unauthorized Access'
+        ], 400);
+    }
         //Validate
         $validator = Validator::make($request->all(), 
         [
