@@ -2,121 +2,74 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Support\Facades\Validator;
+use Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Like;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+
+
 
 class LikeController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
 
-    // Likes and Dislike
-    public function react(Request $request){
-
-        // validate
-        $validator = Validator::make($request->all(), [
-            'post_id' => 'required|integer|exists:blog_posts,id',
-            'status' => 'required|integer'
-        ]);
-
-        if($validator->fails()){
-            return response()->json([
-                'status' => 'fail',
-                'message' => $validator->errors()
-            ], 400);
-        }
-
-        $userId = auth()->id();
-        $postId = $request->post_id;
-        $status = $request->status;
-
-        // If already user leaves a reaction
-        $like = Like::where('user_id', $userId)->where('post_id', $postId)->first();
-        if($like){
-            if($like->status == $status){
-                // Same reaction again - remove reaction
-                $like->delete();
-                return response()->json([
-                'status' => 'success',
-                'message' => 'Reaction removed'
-                ], 201);
-            }else{
-                // Update reaction
-                $like->status = $status;
-                $like->save();
-                return response()->json([
-                'status' => 'success',
-                'message' => 'Reaction Updated'
-                ], 201);
-            }
-        } else{
-            Like::create([
-                'user_id' => $userId,
-                'post_id' => $postId,
-                'status' => $status
-            ]);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Reaction added'
-            ], 201);
-        }
-    }
-
-    // API to get Likes and Dislikes
-    public function reactions(Request $request, $postId){
-
-        $likesCount = Like::where('post_id', $postId)->where('status', 1)->count();
-        $dislikesCount = Like::where('post_id', $postId)->where('status', 2)->count();
-
+ public function react(Request $request)
+{
+    $user = $request->user();
+    if (! $user) {
         return response()->json([
-            'status' => 'success',
-            'likes' => $likesCount,
-            'dislikes' => $dislikesCount,
-            'post_id' => $postId
+            'status' => 'fail',
+             'message' => 'Unauthenticated'
+    ], 401);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'post_id' => 'required|integer|exists:blog_posts,id',
+        'status'  => 'required|integer|in:0,1' // 1=like, 0=dislike
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 'fail', 
+            'message' => $validator->errors()
+    ], 400);
+    }
+
+    $userId = $user->id;
+    $postId = (int) $request->post_id;
+    $status = (int) $request->status;
+
+    // Same-user-per-post record
+    $like = Like::firstOrNew(['user_id' => $userId, 'post_id' => $postId]);
+
+    // If same reaction sent again → remove (toggle off)
+    if ($like->exists && (int)$like->status === $status) {
+        $like->delete();
+        return response()->json([
+            'status' => 'success', 
+            'message' => 'Reaction removed'
         ], 200);
-
-    }
-    
-
-   
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+    // alternarively
+    $like->status = $status;
+    $like->save();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+    return response()->json([
+        'status' => 'success', 
+        'message' => $like->wasRecentlyCreated ? 'Reaction added' : 'Reaction updated'], 201);
+}
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
+public function reactions(Request $request, $postId)
+{
+    $likes     = Like::where('post_id', $postId)->where('status', 1)->count();
+    $dislikes  = Like::where('post_id', $postId)->where('status', 0)->count();
+
+    return response()->json([
+        'status'    => 'success',
+        'post_id'   => (int)$postId,
+        'likes'     => $likes,
+        'dislikes'  => $dislikes
+    ], 200);
+}
 }

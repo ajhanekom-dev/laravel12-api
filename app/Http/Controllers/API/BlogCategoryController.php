@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\BlogCategory;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\RateLimiter;
+use App\Http\Controllers\Controller; use Illuminate\Support\Str; use Illuminate\Http\Request;
+use App\Models\BlogCategory; use Illuminate\Support\Facades\Validator;
 
 class BlogCategoryController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Use this part to extract a specific record
+     * Make sure to check http code
      */
     public function index()
     {
@@ -20,78 +17,35 @@ class BlogCategoryController extends Controller
 
         return response()->json(
         [
-            "status" => "success",
-            "count" => count($categories),
-            "data"=> $categories
+            "status" => "success", "count" => count($categories), "data"=> $categories
         ],200);
     }
     /**
-     * Store a newly created resource in storage.
+     * Create a new category. Validation 1st then fails handling with val erros
      */
     public function store(Request $request)
     {
-    
             //Validate
         $validator = Validator::make($request->all(), 
         [
-            'name'      => 'required'
+            'name'=> 'required'
              
         ]);
-
         if($validator->fails())
         {
             return response()->json( [
-            "status"    => "fail",
-            "message"   => $validator-> errors()
+            "status"    => "fail", "message"   => $validator-> errors()
         ], 400);
         }
-        
-        $user = $request->user();
-    if (! $user) 
-    {
-        return response()->json(
-    [
-        'status' => 'fail', 
-        'message' => 'You are not Unauthenticated'
-    ], 401);
-    }
-
-        $key = 'posts-store:' . ($user->id ?? $request->ip());
-    if (RateLimiter::tooManyAttempts($key, 3)) {
-        $seconds = RateLimiter::availableIn($key);
-        return response()->json([
-            'status'  => 'fail',
-            'message' => 'Too many requests. Try again in ' . $seconds . ' seconds.'
-        ], 429);
-    }
-    RateLimiter::hit($key, 60); // decay in 60 seconds
-    // Only admins and authors may edit images
-    if ($user->role == 'reader') 
-    {
-        return response()->json(
-    [
-        'status' => 'fail', 
-        'message' => 'You do not have admin access edit this '
-    ], 400);
-    }
         $data['name'] = $request->name;
         $data['slug'] = Str::slug($request->name);
 
         BlogCategory::create($data);
 
             return response()->json( [
-            "status"    => "success",
-            "message"   => "Category Created Successfully"
+            "status"    => "success",     "message"   => "Category Created Successfully"
         ], 201);
 
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
     }
 
     /**
@@ -99,44 +53,17 @@ class BlogCategoryController extends Controller
      */
     public function update(Request $request, string $id)
     {
-            $user = $request->user();
-    if (!$user) {
-        return response()->json([
-        'status' => 'fail', 
-        'message' => 'Unauthenticated'
-        ], 401);
-    }
-
-        $key = 'posts-store:' . ($user->id ?? $request->ip());
-    if (RateLimiter::tooManyAttempts($key, 3)) {
-        $seconds = RateLimiter::availableIn($key);
-        return response()->json([
-            'status'  => 'fail',
-            'message' => 'Too many requests. Try again in ' . $seconds . ' seconds.'
-        ], 429);
-    }
-    RateLimiter::hit($key, 60); // decay in 60 seconds
-
-    
-    // Only allow admins
-    if ($user->role !== 'admin') {
-        return response()->json(
-        ['status' => 'fail', 
-        'message' => 'Unauthorized Access'
-        ], 400);
-    }
         //Validate
         $validator = Validator::make($request->all(), 
         [
             'name' => 'required'
              
-        ]);
+    ]);
 
         if($validator->fails())
         {
             return response()->json( [
-            "status"    => "fail",
-            "message"   => $validator-> errors()
+            "status"    => "fail",  "message"   => $validator-> errors()
         ], 400);
         
         }
@@ -150,22 +77,19 @@ class BlogCategoryController extends Controller
             $category->save();
 
             return response()->json( [
-            "status"    => "success",
-            "message"   => "Category updated successfully"
+            "status"    => "success",       "message"   => "Category updated successfully"
         ], 200);
 
-        }else{
+ }else{
             return response()->json( [
             "status"    => "fail",
             "message"   => "Category not found"
         ], 404);
 
        }
-    }
+     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+//this is deletee
     public function destroy(string $id)
     {
     $category = BlogCategory::find($id); 
@@ -186,7 +110,6 @@ class BlogCategoryController extends Controller
             "message"   => "Category not found"
         ], 404);
 
-        }
-
-    }
+      }
+  }
 }

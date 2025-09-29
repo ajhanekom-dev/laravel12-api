@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
@@ -7,52 +6,38 @@ use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\RateLimiter;
-;
+
+{
+    return response()->json(['status'=>'fail','message'=>'Unauthenticated'], 401);
+}
 
 class CommentController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
-    {
+
+public function index(Request $request)
+{
     $user = $request->user();
-    if (!$user) {
-        return response()->json([
-            'status'  => 'fail',
-            'message' => 'Unauthenticated'
-        ], 401);
+    if (! $user) return response()->json(['status'=>'fail','message'=>'Unauthenticated'], 401);
+
+    if ($user->role !== 'admin') {
+        return response()->json(['status'=>'fail','message'=>'Unauthorized Access'], 400);
     }
 
-    //Rate limit: 10 requests per minute per user
-    $key = 'posts-store:' . ($user->id ?? $request->ip());
-    if (RateLimiter::tooManyAttempts($key, 3)) {
-        $seconds = RateLimiter::availableIn($key);
+    $key = "comments-index:{$user->id}";
+    if (RateLimiter::tooManyAttempts($key, 10)) {
         return response()->json([
-            'status'  => 'fail',
-            'message' => 'Too many requests. Try again in ' . $seconds . ' seconds.'
+            'status'=>'fail',
+            'message'=>'Too many requests. Try again in '.RateLimiter::availableIn($key).' seconds.'
         ], 429);
     }
-    RateLimiter::hit($key, 60); // decay in 60 seconds
-        // Only allow admins
-    if ($user->role !== 'admin') {
-        return response()->json(
-        ['status' => 'fail', 
-        'message' => 'Unauthorized Access'
-        ], 400);
-    }
-        //
-        $comments = Comment::get();
-        return response()->json([
-            'status' => 'success',
-            'count' => count($comments),
-            'data' => $comments
-        ], 200);
-    }
+    RateLimiter::hit($key, 60);
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    $comments = Comment::latest('id')->get();
+    return response()->json(['status'=>'success','count'=>$comments->count(),'data'=>$comments], 200);
+}
+
+
+
     public function store(Request $request)
     {
         // Validate Input
